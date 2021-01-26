@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "typescript",
+			"tsconfig": "ws_lib/src/tsconfig.json",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"label": "tsc: build - ws_lib/src/tsconfig.json"
+		}
+	]
+}
