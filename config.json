@@ -1,1 +1,1 @@
-{"webhook":{"pushMessage":"https://localhost:3001/api/messages","wsRest":"HTTPS://10.0.10.80:8000","port":"8000","serverSocket":"https://loscalhost:9697/api/messages","getMessage":"https://localhost:3001/api/messages"},"company":{"compName":"farmacia","compId":"62","sucId":"1"}}
+{"webhook":{"pushMessage":"https://10.243.45.100:3001/api/messages","wsRest":"HTTPS://10.0.10.80:8000","port":"8000","serverSocket":"https://loscalhost:9697/api/messages","getMessage":"https://10.243.45.100:3001/api/messages"},"company":{"compName":"farmacia","compId":"62","sucId":"1"}}

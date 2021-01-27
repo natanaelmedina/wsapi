@@ -58,7 +58,7 @@ class Interceptor extends EventEmitter {
         super();
         this.state = {
             intent: 0,
-            port:  parseInt(process.env.PORT || 50000),
+            port: parseInt(process.env.PORT || 50000),
             config: {
                 webhook: {
                     pushMessage: "HTTP://LOCALHOST:3000/api/createMessage",
@@ -104,7 +104,7 @@ class Interceptor extends EventEmitter {
     [whatsApp] = new WAConnection();
     [sendSuccess] = [];
     [queue] = [];
-   
+
     async [connect]() {
         try {
             this[whatsApp].setMaxListeners(0)
@@ -143,14 +143,13 @@ class Interceptor extends EventEmitter {
             const msg = typeof data == "object" ? JSON.stringify(data, null) : data
 
             try {
-                console.log('sending',msg)
-                this[socket].write(`>${msg}<`,()=>{})
-        /*         await new Promise((s, reject) => {
+                await new Promise((s, reject) => {
                     setTimeout(() => {
                         reject(new Error('Request timed out'));
                     }, 300000);
                     this.once("dataEnd", s)
-                }) */
+                    this[socket].write(`${msg}`)
+                })
             } catch (error) {
                 queueNotify.unshift(data)
             }
@@ -161,21 +160,31 @@ class Interceptor extends EventEmitter {
     [socketEv] = async (buffer = Buffer) => {
         const data = buffer.toString('ascii').split('\n\n')
         for (const message of data) {
-            const m = Buffer.from(message.substr(5), 'base64').toString('ascii')
-            const info = JSON.parse(m || '{}')
-            if (info.type) {
-                switch (info.type) {
-                    case 'reset': process.exit(0);
-                    case 'dataEnd': this.emit("dataEnd");
-                    case 'logOut': {
-                        fs.unlinkSync(authDir)
-                        await conn.logout()
-                        process.exit(0)
+            try {
+                const m = Buffer.from(message.substr(5), 'base64').toString('ascii')
+                const info = JSON.parse(m || '{}')
+                if (info.type) {
+                    switch (info.type) {
+                        case 'reset':
+                            process.exit(0)
+                            break;
+                        case 'dataEnd': 3
+                            this.emit("dataEnd");
+                            break;
+                        case 'logOut': {
+                            fs.unlinkSync(authDir)
+                            await conn.logout()
+                            process.exit(0)
+                            break;
+                        }
+                        default:
+                            break;
                     }
-                    default:
-                        break;
                 }
+            } catch (error) {
+
             }
+
         }
 
     }
@@ -222,7 +231,7 @@ class Interceptor extends EventEmitter {
             const messages = await chat.messages.all()
             for (const m of messages) {
 
-                if (!resource && m.key.fromMe)
+                if (!resource && m.key.fromMe && !m.broadcast)
                     return
                 let mediaMimeType = 'text/plain'
                 let rawData = null
@@ -372,7 +381,7 @@ class Interceptor extends EventEmitter {
     async [signal](req, resp) {
 
         try {
-            
+
             resp.end('aceptado')
             if (this.sendRun) {
                 this.sendPending = true
@@ -388,14 +397,27 @@ class Interceptor extends EventEmitter {
             else
                 params.append('send_isSend', '0');
 
-            const prefix = '@s.whatsapp.net'
+
 
             const response = await request(`${this.state.config.webhook.getMessage}?${params}`, { agent })
             const { success, data } = await response.json()
 
             if (success && data.length) {
-                let promises = []
 
+                this.notify({
+                    type: "queue", data: data.map(e => (
+                        {
+                            username: e.username,
+                            ser_no: e.ser_no,
+                            media_type: e.media_type,
+                            intent: 0
+                        }
+                    ))
+                })
+                this.notify({
+                    type: "count", data: `0 of ${data.length}`
+                })
+                let count = 0
                 for (const msg of data) {
 
                     let send = WAMessageProto.WebMessageInfo
@@ -404,104 +426,89 @@ class Interceptor extends EventEmitter {
                         username, media_name, remote_resource, ser_no, media_type
                     } = msg
 
-
+                    const prefix = username.length === 10 ? '@broadcast' : username.includes('-') ? '@g.us' : '@s.whatsapp.net'
 
                     if (this[sendSuccess].includes(ser_no))
                         continue
-
-                    this.notify({
-                        type: "queue", data: [
-                            {
-                                username,
-                                ser_no,
-                                media_type,
-                                intent: 0
-                            }
-                        ]
-                    })
-                    continue
                     let type = MessageType.text
                     message = String(message).replace(/{{lf}}/g, '\n').trim();
                     username = username + prefix
 
-                    promises.push(new Promise(async (s, r) => {
-                        try {
-                            //await this[whatsApp].chatRead(username) // mark chat read
-                            await this[whatsApp].updatePresence(username, Presence.available) // tell them we're available
-                            await this[whatsApp].updatePresence(username, Presence.composing) // tell them we're composing
-                            let quoted = null
-                            let vcard = ""
-                            if (replyId)
-                                quoted = await this[whatsApp].loadMessage(username, replyId)
+
+                    try {
+                        //await this[whatsApp].chatRead(username) // mark chat read
+                        await this[whatsApp].updatePresence(username, Presence.available) // tell them we're available
+                        await this[whatsApp].updatePresence(username, Presence.composing) // tell them we're composing
+                        let quoted = null
+                        let vcard = ""
+                        if (replyId)
+                            quoted = await this[whatsApp].loadMessage(username, replyId)
 
 
-                            this.notify({ type: "queue_status", data: { ser_no, status: "sending...", intent: 1 } })
-                            if (String(remote_resource).match(/VCARD/)) {
-                                let contacts = JSON.parse(String(msg.message).replace(/.*<|>/gi, '').trim())
-                                type = MessageType.contact
-                                for (const { tel, nombre } of contacts) {
-                                    let vcard1 = 'BEGIN:VCARD\n'
-                                        + 'VERSION:3.0\n'
-                                        + 'FN:' + nombre + '\n'
-                                        + 'TEL;type=CELL;waid=' + tel[0] + ':' + tel[0] + '\n'
-                                        + 'END:VCARD';
-                                    send = await this[whatsApp].sendMessage(username, { vcard }, type, { quoted })
-                                    vcard += vcard1;
-                                }
-                            } else if (raw_data) {
-                                const mimeType = mime.lookup(imgurl || media_name)
-                                const filename = path.basename(imgurl || media_name)
-                                buff = Buffer.from(raw_data, 'base64');
-
-                                if (media_type.toUpperCase().includes('IMAGE'))
-                                    type = MessageType.image
-                                else if (media_type.toUpperCase().includes('AUDIO'))
-                                    type = MessageType.audio
-                                else if (media_type.toUpperCase().includes('VIDEO'))
-                                    type = MessageType.video
-                                else
-                                    type = MessageType.document
-                                promises.push(
-
-                                )
-                                send = await this[whatsApp].sendMessage(username, buff, type, {
-                                    mimetype: mimeType,
-                                    filename: filename,
-                                    quoted,
-                                    ...(message ? { caption: message } : {})
-                                })
-
-                            } else if (lat && long) {
-                                type = MessageType.location
-
-                                send = await this[whatsApp]
-                                    .sendMessage(username, {
-                                        degreesLatitude: lat,
-                                        degreesLongitude: long
-                                    }, type, { quoted })
-
-                            } else {
-                                send = await this[whatsApp].sendMessage(username, message, type, { quoted })
+                        this.notify({ type: "queue_status", data: { ser_no, status: "sending...", intent: 1 } })
+                        if (String(remote_resource).match(/VCARD/)) {
+                            let contacts = JSON.parse(String(msg.message).replace(/.*<|>/gi, '').trim())
+                            type = MessageType.contact
+                            for (const { tel, nombre } of contacts) {
+                                let vcard1 = 'BEGIN:VCARD\n'
+                                    + 'VERSION:3.0\n'
+                                    + 'FN:' + nombre + '\n'
+                                    + 'TEL;type=CELL;waid=' + tel[0] + ':' + tel[0] + '\n'
+                                    + 'END:VCARD';
+                                send = await this[whatsApp].sendMessage(username, { vcard }, type, { quoted })
+                                vcard += vcard1;
                             }
-                            this[chatUpdate]({
-                                messages: {
-                                    all: () => [send]
-                                }
-                            }, remote_resource, ser_no, buff, vcard)
+                        } else if (raw_data) {
+                            const mimeType = mime.lookup(imgurl || media_name)
+                            const filename = path.basename(imgurl || media_name)
+                            buff = Buffer.from(raw_data, 'base64');
 
-                            this[sendSuccess].push(ser_no)
-                            this.notify({ type: "queue_status", data: { ser_no, status: "success", intent: 1 } })
-                            s(true)
+                            if (media_type.toUpperCase().includes('IMAGE'))
+                                type = MessageType.image
+                            else if (media_type.toUpperCase().includes('AUDIO'))
+                                type = MessageType.audio
+                            else if (media_type.toUpperCase().includes('VIDEO'))
+                                type = MessageType.video
+                            else
+                                type = MessageType.document
+                            promises.push(
 
-                        } catch (error) {
-                            r(error)
-                            this.notify({ type: "queue_status", data: { ser_no, status: error.message, intent: 1 } })
+                            )
+                            send = await this[whatsApp].sendMessage(username, buff, type, {
+                                mimetype: mimeType,
+                                filename: filename,
+                                quoted,
+                                detectLinks: false,
+                                ...(message ? { caption: message } : {})
+                            })
+
+                        } else if (lat && long) {
+                            type = MessageType.location
+
+                            send = await this[whatsApp]
+                                .sendMessage(username, {
+                                    degreesLatitude: lat,
+                                    degreesLongitude: long
+                                }, type, { quoted, detectLinks: false })
+
+                        } else {
+                            send = await this[whatsApp].sendMessage(username, message, type, { quoted, detectLinks: false })
                         }
+                        this[chatUpdate]({
+                            messages: {
+                                all: () => [send]
+                            }
+                        }, remote_resource, ser_no, buff, vcard)
 
-                    }))
+                        this[sendSuccess].push(ser_no)
+                        this.notify({ type: "queue_status", data: { ser_no, status: "success", intent: 1 } })
+                        this.notify({
+                            type: "count", data: `${(++count)} of ${data.length}`
+                        })
+                    } catch (error) {
+                        this.notify({ type: "queue_status", data: { ser_no, status: error.message, intent: 1 } })
+                    }
                 }
-
-                await Promise.all(promises)
             }
 
             this.sendRun = false

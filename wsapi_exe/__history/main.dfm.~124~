@@ -220,6 +220,7 @@ object principal: Tprincipal
             Top = 3
             Width = 105
             Height = 25
+            Anchors = [akTop, akRight]
             Caption = 'WS Log Out'
             TabOrder = 1
             OnClick = logOutClick
@@ -629,22 +630,5 @@ object principal: Tprincipal
       FieldName = 'status'
       Size = 200
     end
-  end
-  object IdSocksServer1: TIdSocksServer
-    Bindings = <>
-    AllowSocks4 = True
-    AllowSocks5 = True
-    NeedsAuthentication = False
-    Left = 352
-    Top = 267
-  end
-  object IdTCPServer1: TIdTCPServer
-    Active = True
-    Bindings = <>
-    DefaultPort = 5656
-    OnException = IdTCPServer1Exception
-    OnExecute = IdTCPServer1Execute
-    Left = 168
-    Top = 259
   end
 end

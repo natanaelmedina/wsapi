@@ -67,6 +67,8 @@ type
     compId: TLabeledEdit;
     sucId: TLabeledEdit;
     Button1: TButton;
+    count: TPanel;
+    Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
     procedure PaintBox1Paint(Sender: TObject);
     procedure ServerSocket1ClientRead(Sender: TObject;
@@ -79,6 +81,9 @@ type
     procedure resetWSClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure logOutClick(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
+    procedure DBGrid1DrawColumnCell(Sender: TObject; const Rect: TRect;
+      DataCol: Integer; Column: TColumn; State: TGridDrawState);
 
   private
     { Private declarations }
@@ -242,6 +247,33 @@ begin
   StringWriter.Free;
 end;
 
+procedure Tprincipal.DBGrid1DrawColumnCell(Sender: TObject; const Rect: TRect;
+  DataCol: Integer; Column: TColumn; State: TGridDrawState);
+begin
+  if (Sender as TDBGrid).DataSource.DataSet.FieldByName('status').AsString = 'success'
+  then
+  begin
+    // change color of row
+    DBGrid1.Canvas.Brush.Color := clGreen;
+    DBGrid1.DefaultDrawColumnCell(Rect, DataCol, Column, State);
+  end
+  else if (Sender as TDBGrid).DataSource.DataSet.FieldByName('status')
+    .AsString = 'sending...' then
+  begin
+    // change color of row
+    DBGrid1.Canvas.Brush.Color := clYellow;
+    DBGrid1.DefaultDrawColumnCell(Rect, DataCol, Column, State);
+  end
+  else if (Sender as TDBGrid).DataSource.DataSet.FieldByName('status')
+    .AsString <> 'queue' then
+  begin
+    // change color of row
+    DBGrid1.Canvas.Brush.Color := clYellow;
+    DBGrid1.DefaultDrawColumnCell(Rect, DataCol, Column, State);
+  end
+
+end;
+
 procedure Tprincipal.FormCreate(Sender: TObject);
 begin
   readConfig;
@@ -346,7 +378,7 @@ var
   ser_no, username, media_type: string;
 begin
 
-  for I := 0 to Data.Count - 1 do
+  for I := 0 to Data.count - 1 do
   begin
     json := Data.Items[I];
     ser_no := json.GetValue<string>('ser_no');
@@ -392,24 +424,9 @@ begin
       MSendMessageintent.value := intent.ToInteger;
       MSendMessagestatus.value := status;
       Post;
-      first;
-      if RecordCount > 5 then
-        while not eof do
-        begin
-
-          if MSendMessagestatus.value = 'success' then
-          begin
-            delete;
-            DBGrid1.Refresh;
-            Refresh;
-            break;
-
-          end;
-          next;
-
-        end;
-
     end;
+    if not Timer1.Enabled then
+      Timer1.Enabled := true;
 
   end;
 
@@ -555,30 +572,49 @@ var
   // arr: TArray<string>;
   // I: Integer;
   // Stream: TFileStream;
+  StringWriter: TStringWriter;
+  Writer: TJsonTextWriter;
 begin
-  exit;
+
   str := string(Socket.ReceiveText);
 
-  if (Copy(str, 0, 1) = '>') and (Copy(str, length(str) - 2, 1) = '<') then
-  begin
-    Data := '';
-  end
-  else if (Copy(str, 0, 1) = '>') then
-  begin
-    Data := str;
-    exit;
-  end
-  else if (Copy(str, length(str) - 2, 1) = '<') then
-  begin
-    Data := Data + str;
-    str := Data;
-    Data := '';
-  end
-  else
-  begin
-    Data := Data + Socket.ReceiveText;
-    exit;
-  end;
+  // if (Copy(str, 0, 1) = '>') and (Copy(str, length(str), 1) = '<') then
+  // begin
+  // Data := '';
+  // end
+  // else if (Copy(str, 0, 1) = '>') then
+  // begin
+  // Data := str;
+  // exit;
+  // end
+  // else if (Copy(str, length(str), 1) = '<') then
+  // begin
+  // Data := Data + str;
+  // str := Data;
+  // Data := '';
+  // end
+  // else
+  // begin
+  // Data := Data + Socket.ReceiveText;
+  // exit;
+  // end;
+
+  // str := Copy(str, 2, length(str) - 2);
+
+  StringWriter := TStringWriter.Create();
+  Writer := TJsonTextWriter.Create(StringWriter);
+
+  with TJSONObjectBuilder.Create(Writer) do
+    try
+      BeginObject.Add('type', 'dataEnd').Add('data', 'null').EndObject;
+      Socket.SendText('data:' + TBase64Encoding.Base64.Encode
+        (StringWriter.ToString) + #$A#$A);
+
+    finally
+      Free;
+      StringWriter.Free;
+      Writer.Free;
+    end;
 
   try
     // str := str.Replace('[', '').Replace(']', '');
@@ -588,7 +624,7 @@ begin
     jsonValue := TJSonObject.ParseJSONValue(str);
     argType := jsonValue.GetValue<string>('type');
     case IndexStr(argType, ['qr', 'message', 'connected', 'console', 'error',
-      'disconnet', 'connecting', 'queue', 'queue_status']) of
+      'disconnet', 'connecting', 'queue', 'queue_status', 'count']) of
       0:
         onQr(jsonValue);
       1:
@@ -610,6 +646,8 @@ begin
         loadQueue(jsonValue.GetValue<TJSONArray>('data'));
       8:
         QueueStatus(jsonValue.GetValue<TJSONValue>('data'));
+      9:
+        count.Caption := jsonValue.GetValue<string>('data');
 
     end;
   except
@@ -619,6 +657,32 @@ begin
     end;
   end;
 
+end;
+
+procedure Tprincipal.Timer1Timer(Sender: TObject);
+begin
+  Timer1.Enabled := false;
+  MSendMessage.DisableConstraints;
+  with MSendMessage do
+  begin
+    Open;
+
+    first;
+    while not eof do
+    begin
+
+      if MSendMessagestatus.value = 'success' then
+      begin
+        delete;
+        DBGrid1.Refresh;
+        Refresh;
+      end;
+      next;
+
+    end;
+
+  end;
+  MSendMessage.EnableControls;
 end;
 
 procedure Tprincipal.update;

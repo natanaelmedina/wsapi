@@ -630,21 +630,4 @@ object principal: Tprincipal
       Size = 200
     end
   end
-  object IdTCPServer1: TIdTCPServer
-    Bindings = <>
-    DefaultPort = 5656
-    OnExecute = IdTCPServer1Execute
-    Left = 168
-    Top = 259
-  end
-  object IdSocksServer2: TIdSocksServer
-    Active = True
-    Bindings = <>
-    DefaultPort = 5656
-    AllowSocks4 = True
-    AllowSocks5 = True
-    NeedsAuthentication = False
-    Left = 488
-    Top = 227
-  end
 end

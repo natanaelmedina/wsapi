@@ -24,6 +24,10 @@ object principal: Tprincipal
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Home'
+      ExplicitLeft = 0
+      ExplicitTop = 0
+      ExplicitWidth = 0
+      ExplicitHeight = 0
       object Pevent: TPanel
         Left = 0
         Top = 375
@@ -629,21 +633,5 @@ object principal: Tprincipal
       FieldName = 'status'
       Size = 200
     end
-  end
-  object IdSocksServer1: TIdSocksServer
-    Bindings = <>
-    AllowSocks4 = True
-    AllowSocks5 = True
-    NeedsAuthentication = False
-    Left = 352
-    Top = 267
-  end
-  object IdTCPServer1: TIdTCPServer
-    Active = True
-    Bindings = <>
-    DefaultPort = 5656
-    OnExecute = IdTCPServer1Execute
-    Left = 168
-    Top = 259
   end
 end

@@ -24,6 +24,9 @@ object principal: Tprincipal
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Home'
+      DesignSize = (
+        641
+        565)
       object Pevent: TPanel
         Left = 0
         Top = 375
@@ -220,6 +223,7 @@ object principal: Tprincipal
             Top = 3
             Width = 105
             Height = 25
+            Anchors = [akTop, akRight]
             Caption = 'WS Log Out'
             TabOrder = 1
             OnClick = logOutClick
@@ -255,6 +259,7 @@ object principal: Tprincipal
             TitleFont.Height = -11
             TitleFont.Name = 'Tahoma'
             TitleFont.Style = []
+            OnDrawColumnCell = DBGrid1DrawColumnCell
             Columns = <
               item
                 Expanded = False
@@ -317,6 +322,23 @@ object principal: Tprincipal
           end
         end
       end
+      object count: TPanel
+        Left = 456
+        Top = 118
+        Width = 185
+        Height = 44
+        Anchors = [akTop, akRight]
+        Caption = '0 of 0'
+        Color = clDefault
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWhite
+        Font.Height = -19
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentBackground = False
+        ParentFont = False
+        TabOrder = 3
+      end
     end
     object TSConfig: TTabSheet
       Margins.Left = 0
@@ -347,7 +369,7 @@ object principal: Tprincipal
           Left = 0
           Top = 142
           Width = 637
-          Height = 235
+          Height = 219
           Margins.Left = 0
           Margins.Top = 0
           Margins.Right = 0
@@ -355,19 +377,19 @@ object principal: Tprincipal
           Align = alTop
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
-          Font.Height = -16
+          Font.Height = -13
           Font.Name = 'Consolas'
-          Font.Style = [fsBold]
+          Font.Style = []
           ParentFont = False
           TabOrder = 0
           DesignSize = (
             637
-            235)
+            219)
           object Panel11: TPanel
             Left = 1
             Top = 1
             Width = 635
-            Height = 32
+            Height = 25
             Align = alTop
             Alignment = taLeftJustify
             BevelEdges = []
@@ -387,17 +409,11 @@ object principal: Tprincipal
             Left = 128
             Top = 39
             Width = 497
-            Height = 27
+            Height = 23
             Anchors = [akLeft, akTop, akRight]
-            EditLabel.Width = 117
-            EditLabel.Height = 19
+            EditLabel.Width = 91
+            EditLabel.Height = 15
             EditLabel.Caption = 'SEND MESSAGES'
-            EditLabel.Font.Charset = DEFAULT_CHARSET
-            EditLabel.Font.Color = clWindowText
-            EditLabel.Font.Height = -16
-            EditLabel.Font.Name = 'Consolas'
-            EditLabel.Font.Style = [fsBold]
-            EditLabel.ParentFont = False
             LabelPosition = lpLeft
             TabOrder = 1
             Text = 'https://loscalhost:3000/api/messages'
@@ -406,10 +422,10 @@ object principal: Tprincipal
             Left = 128
             Top = 139
             Width = 497
-            Height = 27
+            Height = 23
             Anchors = [akLeft, akTop, akRight]
-            EditLabel.Width = 72
-            EditLabel.Height = 19
+            EditLabel.Width = 56
+            EditLabel.Height = 15
             EditLabel.Caption = 'WS RESET'
             LabelPosition = lpLeft
             TabOrder = 2
@@ -419,10 +435,10 @@ object principal: Tprincipal
             Left = 128
             Top = 173
             Width = 137
-            Height = 27
+            Height = 23
             Color = clWhite
-            EditLabel.Width = 72
-            EditLabel.Height = 19
+            EditLabel.Width = 56
+            EditLabel.Height = 15
             EditLabel.Caption = 'APP PORT'
             LabelPosition = lpLeft
             TabOrder = 3
@@ -432,17 +448,11 @@ object principal: Tprincipal
             Left = 128
             Top = 105
             Width = 497
-            Height = 27
+            Height = 23
             Anchors = [akLeft, akTop, akRight]
-            EditLabel.Width = 117
-            EditLabel.Height = 19
+            EditLabel.Width = 91
+            EditLabel.Height = 15
             EditLabel.Caption = 'SOCKET NOTYFY'
-            EditLabel.Font.Charset = DEFAULT_CHARSET
-            EditLabel.Font.Color = clWindowText
-            EditLabel.Font.Height = -16
-            EditLabel.Font.Name = 'Consolas'
-            EditLabel.Font.Style = [fsBold]
-            EditLabel.ParentFont = False
             LabelPosition = lpLeft
             TabOrder = 4
             Text = 'https://loscalhost:9697/api/messages'
@@ -451,17 +461,11 @@ object principal: Tprincipal
             Left = 128
             Top = 71
             Width = 497
-            Height = 27
+            Height = 23
             Anchors = [akLeft, akTop, akRight]
-            EditLabel.Width = 108
-            EditLabel.Height = 19
+            EditLabel.Width = 84
+            EditLabel.Height = 15
             EditLabel.Caption = 'GET MESSAGES'
-            EditLabel.Font.Charset = DEFAULT_CHARSET
-            EditLabel.Font.Color = clWindowText
-            EditLabel.Font.Height = -16
-            EditLabel.Font.Name = 'Consolas'
-            EditLabel.Font.Style = [fsBold]
-            EditLabel.ParentFont = False
             LabelPosition = lpLeft
             TabOrder = 5
             Text = 'https://loscalhost:3000/api/messages'
@@ -478,12 +482,6 @@ object principal: Tprincipal
           Margins.Right = 0
           Margins.Bottom = 10
           Align = alTop
-          Font.Charset = DEFAULT_CHARSET
-          Font.Color = clWindowText
-          Font.Height = -16
-          Font.Name = 'Consolas'
-          Font.Style = [fsBold]
-          ParentFont = False
           TabOrder = 1
           DesignSize = (
             637
@@ -492,7 +490,7 @@ object principal: Tprincipal
             Left = 1
             Top = 1
             Width = 635
-            Height = 32
+            Height = 25
             Align = alTop
             Alignment = taLeftJustify
             BevelEdges = []
@@ -511,18 +509,12 @@ object principal: Tprincipal
           object compName: TLabeledEdit
             Left = 80
             Top = 39
-            Width = 385
-            Height = 27
+            Width = 225
+            Height = 21
             Anchors = [akLeft, akTop, akRight]
-            EditLabel.Width = 36
-            EditLabel.Height = 19
+            EditLabel.Width = 27
+            EditLabel.Height = 13
             EditLabel.Caption = 'Name'
-            EditLabel.Font.Charset = DEFAULT_CHARSET
-            EditLabel.Font.Color = clWindowText
-            EditLabel.Font.Height = -16
-            EditLabel.Font.Name = 'Consolas'
-            EditLabel.Font.Style = [fsBold]
-            EditLabel.ParentFont = False
             LabelPosition = lpLeft
             TabOrder = 1
             Text = 'company name'
@@ -531,9 +523,9 @@ object principal: Tprincipal
             Left = 80
             Top = 69
             Width = 81
-            Height = 27
-            EditLabel.Width = 36
-            EditLabel.Height = 19
+            Height = 21
+            EditLabel.Width = 25
+            EditLabel.Height = 13
             EditLabel.Caption = 'Code'
             LabelPosition = lpLeft
             TabOrder = 2
@@ -543,9 +535,9 @@ object principal: Tprincipal
             Left = 80
             Top = 99
             Width = 81
-            Height = 27
-            EditLabel.Width = 72
-            EditLabel.Height = 19
+            Height = 21
+            EditLabel.Width = 45
+            EditLabel.Height = 13
             EditLabel.Caption = 'Suc Code'
             LabelPosition = lpLeft
             TabOrder = 3
@@ -630,22 +622,10 @@ object principal: Tprincipal
       Size = 200
     end
   end
-  object IdSocksServer1: TIdSocksServer
-    Bindings = <>
-    AllowSocks4 = True
-    AllowSocks5 = True
-    NeedsAuthentication = False
-    Left = 352
+  object Timer1: TTimer
+    Interval = 200000
+    OnTimer = Timer1Timer
+    Left = 384
     Top = 267
-  end
-  object IdTCPServer1: TIdTCPServer
-    Active = True
-    Bindings = <>
-    DefaultPort = 5656
-    OnConnect = IdTCPServer1Connect
-    OnException = IdTCPServer1Exception
-    OnExecute = IdTCPServer1Execute
-    Left = 168
-    Top = 259
   end
 end
