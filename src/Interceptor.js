@@ -56,6 +56,26 @@ class Interceptor extends EventEmitter {
 
     constructor() {
         super();
+        this.state = {
+            intent: 0,
+            port:  parseInt(process.env.PORT || 50000),
+            config: {
+                webhook: {
+                    pushMessage: "HTTP://LOCALHOST:3000/api/createMessage",
+                    getMessage: "HTTP://LOCALHOST:3000/api/message",
+                    wsRest: "HTTPS://10.0.10.80:8000",
+                    port: 8000,
+                    serverSocket: "HTTP://LOCALHOST:9696"
+                },
+                company: {
+                    compName: "IKompras Srl",
+                    compId: 62,
+                    sucId: 1,
+                    botWsNumber: null
+                },
+                ...JSON.parse(configStr)
+            }
+        };
         this[whatsApp].regenerateQRIntervalMs = 60000 * 3
         this[whatsApp].connectOptions.maxRetries = 5000
         this[whatsApp].connectOptions.connectCooldownMs = 10000
@@ -84,26 +104,7 @@ class Interceptor extends EventEmitter {
     [whatsApp] = new WAConnection();
     [sendSuccess] = [];
     [queue] = [];
-    state = {
-        intent: 0,
-        port:  parseInt(process.env.PORT || 50000),
-        config: {
-            webhook: {
-                pushMessage: "HTTP://LOCALHOST:3000/api/createMessage",
-                getMessage: "HTTP://LOCALHOST:3000/api/message",
-                wsRest: "HTTPS://10.0.10.80:8000",
-                port: 8000,
-                serverSocket: "HTTP://LOCALHOST:9696"
-            },
-            company: {
-                compName: "IKompras Srl",
-                compId: 62,
-                sucId: 1,
-                botWsNumber: null
-            },
-            ...JSON.parse(configStr)
-        }
-    };
+   
     async [connect]() {
         try {
             this[whatsApp].setMaxListeners(0)
