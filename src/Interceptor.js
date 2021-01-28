@@ -277,7 +277,7 @@ class Interceptor extends EventEmitter {
             const messages = await chat.messages.all()
             for (const m of messages) {
 
-                if (!resource && m.key.fromMe && !m.broadcast)
+                if (!sendSerNo && m.key.fromMe && !m.broadcast)
                     return
                 let mediaMimeType = 'text/plain'
                 let rawData = null
