@@ -19,7 +19,7 @@ object principal: Tprincipal
     Top = 0
     Width = 649
     Height = 593
-    ActivePage = TabSheet1
+    ActivePage = TSConfig
     Align = alClient
     TabOrder = 0
     object TabSheet1: TTabSheet
@@ -361,9 +361,6 @@ object principal: Tprincipal
         VertScrollBar.Tracking = True
         Align = alClient
         TabOrder = 0
-        DesignSize = (
-          637
-          561)
         object webhook: TPanel
           AlignWithMargins = True
           Left = 0
@@ -543,13 +540,119 @@ object principal: Tprincipal
             TabOrder = 3
             Text = '1'
           end
+          object showConsole: TCheckBox
+            Left = 538
+            Top = 32
+            Width = 87
+            Height = 17
+            Caption = 'show console'
+            TabOrder = 4
+          end
+        end
+        object clearChats: TPanel
+          AlignWithMargins = True
+          Left = 0
+          Top = 371
+          Width = 637
+          Height = 126
+          Margins.Left = 0
+          Margins.Top = 0
+          Margins.Right = 0
+          Margins.Bottom = 10
+          Align = alTop
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clWindowText
+          Font.Height = -13
+          Font.Name = 'Consolas'
+          Font.Style = []
+          ParentFont = False
+          TabOrder = 2
+          DesignSize = (
+            637
+            126)
+          object Label1: TLabel
+            Left = 288
+            Top = 95
+            Width = 308
+            Height = 15
+            Caption = 'Day of the week (0-6 for Sunday to Saturday)'
+          end
+          object Panel6: TPanel
+            Left = 1
+            Top = 1
+            Width = 635
+            Height = 25
+            Align = alTop
+            Alignment = taLeftJustify
+            BevelEdges = []
+            BevelOuter = bvNone
+            Caption = 'Clear Chats'
+            Color = clSilver
+            Font.Charset = DEFAULT_CHARSET
+            Font.Color = clWindowText
+            Font.Height = -16
+            Font.Name = 'Consolas'
+            Font.Style = [fsBold]
+            ParentBackground = False
+            ParentFont = False
+            TabOrder = 0
+          end
+          object hora: TLabeledEdit
+            Left = 128
+            Top = 58
+            Width = 154
+            Height = 23
+            Anchors = [akLeft, akTop, akRight]
+            EditLabel.Width = 28
+            EditLabel.Height = 15
+            EditLabel.Caption = 'Hour'
+            LabelPosition = lpLeft
+            TabOrder = 1
+            Text = '02:00 am'
+          end
+          object active: TCheckBox
+            Left = 128
+            Top = 35
+            Width = 177
+            Height = 17
+            Caption = 'delete automatic chats'
+            Checked = True
+            State = cbChecked
+            TabOrder = 2
+          end
+          object clearChat: TButton
+            Left = 513
+            Top = 29
+            Width = 120
+            Height = 25
+            Anchors = [akTop, akRight]
+            Caption = 'Clear chat now'
+            TabOrder = 3
+            OnClick = clearChatClick
+          end
+          object semana: TLabeledEdit
+            Left = 128
+            Top = 87
+            Width = 154
+            Height = 23
+            Anchors = [akLeft, akTop, akRight]
+            EditLabel.Width = 28
+            EditLabel.Height = 15
+            EditLabel.Caption = 'Week'
+            LabelPosition = lpLeft
+            TabOrder = 4
+            Text = '0-6'
+          end
         end
         object Button1: TButton
-          Left = 487
-          Top = 526
-          Width = 147
+          AlignWithMargins = True
+          Left = 200
+          Top = 510
+          Width = 237
           Height = 32
-          Anchors = [akRight, akBottom]
+          Margins.Left = 200
+          Margins.Right = 200
+          Align = alTop
           Caption = 'Save changes'
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clGreen
@@ -557,16 +660,19 @@ object principal: Tprincipal
           Font.Name = 'Consolas'
           Font.Style = [fsBold]
           ParentFont = False
-          TabOrder = 2
+          TabOrder = 3
           OnClick = Button1Click
+          ExplicitLeft = -12
+          ExplicitTop = 526
+          ExplicitWidth = 637
         end
       end
     end
   end
   object DSMessagees: TDataSource
     DataSet = MSendMessage
-    Left = 128
-    Top = 384
+    Left = 528
+    Top = 240
   end
   object MSendMessage: TFDMemTable
     FieldDefs = <
@@ -602,8 +708,8 @@ object principal: Tprincipal
     UpdateOptions.CheckRequired = False
     UpdateOptions.AutoCommitUpdates = True
     StoreDefs = True
-    Left = 72
-    Top = 376
+    Left = 552
+    Top = 296
     object MSendMessageintent: TIntegerField
       FieldName = 'intent'
     end

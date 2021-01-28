@@ -10,6 +10,8 @@ const domain = require('domain')
 const uuid = require('uuid')
 const mime = require('mime-types')
 const _ = require('lodash')
+const schedule = require('node-schedule');
+const { parsePhoneNumber } = require('libphonenumber-js');
 
 
 const https = require('https');
@@ -58,6 +60,7 @@ class Interceptor extends EventEmitter {
         super();
         this.state = {
             intent: 0,
+            wsConnected: false,
             port: parseInt(process.env.PORT || 50000),
             config: {
                 webhook: {
@@ -72,6 +75,11 @@ class Interceptor extends EventEmitter {
                     compId: 62,
                     sucId: 1,
                     botWsNumber: null
+                },
+                clearChats: {
+                    active: true,
+                    hora: '02:00 AM',
+                    semana: '0-9'
                 },
                 ...JSON.parse(configStr)
             }
@@ -133,6 +141,38 @@ class Interceptor extends EventEmitter {
         }
     }
     async notify(notify) {
+        if (notify && notify.type == "disconnet") {
+
+            const { name, sucId, compId } = this.state.config.company
+            const url = this.state.config.webhook.serverSocket
+            const msg = `La compañia *${name}* no tiene conexion de internet`
+            this.state.wsConnected = false
+            request(url, {
+                method: 'POST',
+                headers: { "Content-type": "application/x-www-form-urlencoded; charset=UTF-8" },
+                body: `comp_id=${compId}&suc_id=${sucId}&msg=${msg}`,
+                agent
+            })
+
+            this.timeOuConnected = setTimeout(() => {
+                clearTimeout(this.timeOuConnected)
+                if (!this.state.wsConnected)
+                    process.exit(0)
+            }, 60000);
+
+        } else if (notify && notify.type == "connected") {
+            const { name, sucId, compId } = this.state.config.company
+            const url = this.state.config.webhook.serverSocket
+            const msg = `La compañia *${name}* esta contectada`
+            this.state.wsConnected = false
+            request(url, {
+                method: 'POST',
+                headers: { "Content-type": "application/x-www-form-urlencoded; charset=UTF-8" },
+                body: `comp_id=${compId}&suc_id=${sucId}&msg=${msg}`,
+                agent
+            })
+            clearTimeout(this.timeOuConnected)
+        }
         queueNotify.push(notify)
         if (this.queueNotifyRun) {
             return
@@ -168,13 +208,17 @@ class Interceptor extends EventEmitter {
                         case 'reset':
                             process.exit(0)
                             break;
-                        case 'dataEnd': 3
+                        case 'dataEnd':
                             this.emit("dataEnd");
                             break;
                         case 'logOut': {
+                            await this[whatsApp].logout()
                             fs.unlinkSync(authDir)
-                            await conn.logout()
                             process.exit(0)
+                            break;
+                        }
+                        case 'clearChats': {
+                            this.clearChats()
                             break;
                         }
                         default:
@@ -196,10 +240,8 @@ class Interceptor extends EventEmitter {
         await this[whatsApp].connect()
         if (!auth) {
             try {
-                console.log('guardando credenciales')
                 const credential = this[whatsApp].base64EncodedAuthInfo()
                 const fileDir = path.join(__dirname, './auth_info.json')
-                console.log(fileDir)
                 fs.writeFileSync(fileDir, JSON.stringify(credential, null, '\t'))
             } catch (error) {
                 console.error('error credenciales', error.message)
@@ -212,7 +254,7 @@ class Interceptor extends EventEmitter {
             type: "connected",
             data: data.user
         })
-
+        this.state.wsConnected = true
         this.state.config.company.botWsNumber = data.user.jid.replace(/[^0-9]/g, '')
         this[signal]({ firstInit: true }, { end: () => { } })
         const m = await this[whatsApp].loadAllUnreadMessages()
@@ -418,8 +460,11 @@ class Interceptor extends EventEmitter {
                     type: "count", data: `0 of ${data.length}`
                 })
                 let count = 0
-                for (const msg of data) {
+                let total = data.length
+                while (data.length) {
 
+                    const msg = data.shift()
+                    msg.intent = msg.intent ? (++msg.intent) : 1
                     let send = WAMessageProto.WebMessageInfo
                     let buff = null
                     let { message, imgurl, raw_data, lat, long, replyId,
@@ -427,6 +472,8 @@ class Interceptor extends EventEmitter {
                     } = msg
 
                     const prefix = username.length === 10 ? '@broadcast' : username.includes('-') ? '@g.us' : '@s.whatsapp.net'
+                    if (prefix.includes('@s.whatsapp.net') && !parsePhoneNumber('+' + username).isValid)
+                        continue
 
                     if (this[sendSuccess].includes(ser_no))
                         continue
@@ -437,6 +484,7 @@ class Interceptor extends EventEmitter {
 
                     try {
                         //await this[whatsApp].chatRead(username) // mark chat read
+                        this.notify({ type: "queue_status", data: { ser_no, status: "sending...", intent: msg.intent } })
                         await this[whatsApp].updatePresence(username, Presence.available) // tell them we're available
                         await this[whatsApp].updatePresence(username, Presence.composing) // tell them we're composing
                         let quoted = null
@@ -445,7 +493,7 @@ class Interceptor extends EventEmitter {
                             quoted = await this[whatsApp].loadMessage(username, replyId)
 
 
-                        this.notify({ type: "queue_status", data: { ser_no, status: "sending...", intent: 1 } })
+
                         if (String(remote_resource).match(/VCARD/)) {
                             let contacts = JSON.parse(String(msg.message).replace(/.*<|>/gi, '').trim())
                             type = MessageType.contact
@@ -501,13 +549,13 @@ class Interceptor extends EventEmitter {
                         }, remote_resource, ser_no, buff, vcard)
 
                         this[sendSuccess].push(ser_no)
-                        this.notify({ type: "queue_status", data: { ser_no, status: "success", intent: 1 } })
-                        this.notify({
-                            type: "count", data: `${(++count)} of ${data.length}`
-                        })
+                        this.notify({ type: "queue_status", data: { ser_no, status: "success", intent: msg.intent } })
+                        this.notify({ type: "count", data: `${(++count)} of ${total}` })
                     } catch (error) {
-                        this.notify({ type: "queue_status", data: { ser_no, status: error.message, intent: 1 } })
+                        data.unshift(msg)
+                        this.notify({ type: "queue_status", data: { ser_no, status: error.message, intent: msg.intent } })
                     }
+
                 }
             }
 
@@ -522,8 +570,43 @@ class Interceptor extends EventEmitter {
         }
 
     };
+    async clearChats() {
+        const chats = Object.keys(this[whatsApp].chats.dict)
+        for (const chat of chats) {
+            this[whatsApp].modifyChat(chat, 'delete')
+        }
+
+    }
+
 }
 const interceptor = new Interceptor()
+
+/**
+ * horarios de limpieza de chats -----------------------------
+ 
+**/
+try {
+    if (interceptor.state.config.clearChats.active) {
+        const { hora, semana } = interceptor.state.config.clearChats
+        const rango = [];
+        if (semana.indexOf('-') > -1) {
+            let [start, end] = semana.split('-')
+            rango.push(new schedule.Range(parseInt(start), parseInt(end)))
+        } else {
+            for (const dia of semana.split(',')) {
+                rango.push(parseInt(dia))
+            }
+        }
+        const date = new Date('1 ' + hora);
+        const rule = new schedule.RecurrenceRule();
+        rule.dayOfWeek = rango;
+        rule.hour = date.getHours();
+        rule.minute = date.getMinutes();
+        schedule.scheduleJob(rule, interceptor.clearChats.bind(interceptor));
+    }
+} catch (error) {
+    console.log(error)
+}
 
 
 module.exports = interceptor

@@ -2,3 +2,6 @@ node_modules/
 node_modules/*
 .vscode/
 wsapi.exe
+wsapi_exe/__history
+wsapi_exe/__history/*
+wsapi_exe/__recovery/*

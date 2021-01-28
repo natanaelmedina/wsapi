@@ -66,9 +66,17 @@ type
     compName: TLabeledEdit;
     compId: TLabeledEdit;
     sucId: TLabeledEdit;
-    Button1: TButton;
     count: TPanel;
     Timer1: TTimer;
+    clearChats: TPanel;
+    Panel6: TPanel;
+    hora: TLabeledEdit;
+    active: TCheckBox;
+    clearChat: TButton;
+    Label1: TLabel;
+    semana: TLabeledEdit;
+    showConsole: TCheckBox;
+    Button1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure PaintBox1Paint(Sender: TObject);
     procedure ServerSocket1ClientRead(Sender: TObject;
@@ -84,6 +92,7 @@ type
     procedure Timer1Timer(Sender: TObject);
     procedure DBGrid1DrawColumnCell(Sender: TObject; const Rect: TRect;
       DataCol: Integer; Column: TColumn; State: TGridDrawState);
+    procedure clearChatClick(Sender: TObject);
 
   private
     { Private declarations }
@@ -164,7 +173,7 @@ var
   StringWriter: TStringWriter;
   Writer: TJsonTextWriter;
 begin
-  if MessageDlg('Esto deslogue este app de whatsApp, deseas hacerlo?',
+  if MessageDlg('Esto desloguea este app de whatsApp, deseas hacerlo?',
     mtConfirmation, [mbYes, mbNo], 0, mbYes) = mrYes then
   begin
     if Socket_act <> nil then
@@ -188,6 +197,34 @@ begin
     end;
   end;
 
+end;
+
+procedure Tprincipal.clearChatClick(Sender: TObject);
+var
+  StringWriter: TStringWriter;
+  Writer: TJsonTextWriter;
+begin
+  if Socket_act <> nil then
+  begin
+
+    StringWriter := TStringWriter.Create();
+    Writer := TJsonTextWriter.Create(StringWriter);
+
+    with TJSONObjectBuilder.Create(Writer) do
+      try
+
+        BeginObject.Add('type', 'clearChats').Add('data', 'null').EndObject;
+
+        Socket_act.SendText('data:' + TBase64Encoding.Base64.Encode
+          (StringWriter.ToString) + #$A#$A);
+
+      finally
+        Free;
+        StringWriter.Free;
+        Writer.Free;
+      end;
+
+  end;
 end;
 
 procedure Tprincipal.clearLogClick(Sender: TObject);
@@ -226,6 +263,12 @@ begin
           json.Add(((configSC.Controls[I] as TPanel).Controls[X]
             as TLabeledEdit).Name,
             ((configSC.Controls[I] as TPanel).Controls[X] as TLabeledEdit).Text)
+        end
+        else if (configSC.Controls[I] as TPanel).Controls[X] is TCheckBox then
+        begin
+          json.Add(((configSC.Controls[I] as TPanel).Controls[X] as TCheckBox)
+            .Name, ((configSC.Controls[I] as TPanel).Controls[X]
+            as TCheckBox).Checked)
         end;
 
       end;
@@ -300,7 +343,10 @@ begin
     FillChar(SI, SizeOf(SI), 0);
     cb := SizeOf(SI);
     dwFlags := STARTF_USESHOWWINDOW or STARTF_USESTDHANDLES;
-    wShowWindow := SW_NORMAL;
+    if showConsole.Checked then
+      wShowWindow := SW_NORMAL
+    else
+      wShowWindow := SW_HIDE;
     hStdInput := GetStdHandle(STD_INPUT_HANDLE); // don't redirect stdin
 
   end;
@@ -328,7 +374,7 @@ begin
   begin
     try
       socketServer.port := port;
-      socketServer.Active := true;
+      socketServer.active := true;
       _open := true
     except
       on E: ESocketError do
@@ -346,14 +392,15 @@ var
   jtr: TJsonTextReader;
   sr: TStringReader;
   component: TComponent;
-  key, value: string;
+  key: string;
+  value: variant;
 
 begin
   sr := TStringReader.Create(Data);
   jtr := TJsonTextReader.Create(sr);
   while jtr.Read do
   begin
-    value := jtr.value.AsString;
+    value := jtr.value.asvariant;
     if jtr.TokenType = TJsonToken.PropertyName then
     begin
       key := jtr.value.ToString;
@@ -362,9 +409,16 @@ begin
       if component is TLabeledEdit then
       begin
         jtr.Read;
-        value := jtr.value.AsString;
-        (component as TLabeledEdit).Text := value
+        value := jtr.value.asvariant;
+        TLabeledEdit(component).Text := value
+      end
+      else if component is TCheckBox then
+      begin
+        jtr.Read;
+        value := jtr.value.asvariant;
+        TCheckBox(component).Checked := value
       end;
+
     end
 
   end;
@@ -390,7 +444,7 @@ begin
       if not Locate('serNo', ser_no) then
       begin
         insert;
-        MSendMessageintent.value := 1;
+        MSendMessageintent.value := 0;
         MSendMessageserNo.value := ser_no.ToInteger;
         MSendMessageto.value := username;
         MSendMessagetype.value := media_type;
