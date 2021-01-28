@@ -333,7 +333,7 @@ var
 begin
 
   dir := ExtractFileDir(Application.ExeName);
-  api := ExpandFileName(dir + '.\index2.js ');
+  api := ExpandFileName(dir + '.\index.js ');
   node := ExpandFileName(dir + '.\node.exe ');
   env := 'SET PORT=' + socketServer.port.ToString;
 
