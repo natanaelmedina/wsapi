@@ -333,7 +333,7 @@ var
 begin
 
   dir := ExtractFileDir(Application.ExeName);
-  api := ExpandFileName(dir + '.\index.js ');
+  api := 'index.js'; // ExtractFileDir(dir + '.\index.js ');
   node := ExpandFileName(dir + '.\node.exe ');
   env := 'SET PORT=' + socketServer.port.ToString;
 
@@ -350,7 +350,7 @@ begin
     hStdInput := GetStdHandle(STD_INPUT_HANDLE); // don't redirect stdin
 
   end;
-  status := CreateProcess(nil, PChar('cmd.exe /C ' + env + '&' + node + ' ' +
+  status := CreateProcess(nil, PChar('cmd.exe /C ' + env + '&"' + node + '" ' +
     api), nil, nil, true, 0, nil, nil, SI, PI);
 
 end;

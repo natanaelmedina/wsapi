@@ -19,7 +19,7 @@ object principal: Tprincipal
     Top = 0
     Width = 649
     Height = 593
-    ActivePage = TSConfig
+    ActivePage = TabSheet1
     Align = alClient
     TabOrder = 0
     object TabSheet1: TTabSheet
