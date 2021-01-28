@@ -143,9 +143,9 @@ class Interceptor extends EventEmitter {
     async notify(notify) {
         if (notify && notify.type == "disconnet") {
 
-            const { name, sucId, compId } = this.state.config.company
+            const { compName, sucId, compId } = this.state.config.company
             const url = this.state.config.webhook.serverSocket
-            const msg = `La compañia *${name}* no tiene conexion de internet`
+            const msg = `La compañia *${compName}* no tiene conexion de internet`
             this.state.wsConnected = false
             request(url, {
                 method: 'POST',
@@ -165,9 +165,9 @@ class Interceptor extends EventEmitter {
             }, 60000);
 
         } else if (notify && notify.type == "connected") {
-            const { name, sucId, compId } = this.state.config.company
+            const { compName, sucId, compId } = this.state.config.company
             const url = this.state.config.webhook.serverSocket
-            const msg = `La compañia *${name}* esta contectada`
+            const msg = `La compañia *${compName}* esta contectada`
             this.state.wsConnected = false
             request(url, {
                 method: 'POST',
