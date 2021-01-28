@@ -156,8 +156,12 @@ class Interceptor extends EventEmitter {
 
             this.timeOuConnected = setTimeout(() => {
                 clearTimeout(this.timeOuConnected)
-                if (!this.state.wsConnected)
+                if (!this.state.wsConnected){
+                    const url = this.state.config.webhook.wsRest
+                    request(url, { method: 'GET', headers: { "Content-type": "application/x-www-form-urlencoded; charset=UTF-8" } })
                     process.exit(0)
+                }
+                    
             }, 60000);
 
         } else if (notify && notify.type == "connected") {
