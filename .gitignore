@@ -8,3 +8,4 @@ wsapi_exe/__recovery/*
 wsapi_exe/Win32/*
 wsapi_exe/Win32/Debug/*
 config.json
+./config.json
