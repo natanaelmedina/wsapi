@@ -493,9 +493,8 @@ class Interceptor extends EventEmitter {
 
 
                     try {
-                        //await this[whatsApp].chatRead(username) // mark chat read
                         this.notify({ type: "queue_status", data: { ser_no, status: "sending...", intent: msg.intent } })
-                        if (!profileQuery.find(username)) {
+                        if (!profileQuery.includes(username)) {
                             profileQuery.push(username)
                             const profilePicture = await this[whatsApp].getProfilePicture(username)
                             if (profilePictureRef != profilePicture) {
