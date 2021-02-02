@@ -354,11 +354,11 @@ class Interceptor extends EventEmitter {
                     messageId: m.messageTimestamp.low,
                     keyRemoteJid: m.key.remoteJid.replace(/[^0-9\-]/g, ''),
                     remoteJid: m.key.remoteJid,
-                    data,
+                    data: data == 'null' ? "" : data,
                     mediaWaType,
                     mediaName,
                     mediaMimeType,
-                    mediaCaption: mediaCaption == 'null' ? null : mediaCaption,
+                    mediaCaption: mediaCaption == 'null' ? "" : mediaCaption,
                     mediaSize,
                     rawData,
                     timestamp: m.messageTimestamp.low,
@@ -523,15 +523,12 @@ class Interceptor extends EventEmitter {
                                 type = MessageType.video
                             else
                                 type = MessageType.document
-                            promises.push(
-
-                            )
                             send = await this[whatsApp].sendMessage(username, buff, type, {
                                 mimetype: mimeType,
                                 filename: filename,
                                 quoted,
                                 detectLinks: false,
-                                ...(message ? { caption: message } : {})
+                                ...(message && message!="null"? { caption: message } : {})
                             })
 
                         } else if (lat && long) {

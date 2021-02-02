@@ -297,7 +297,7 @@ begin
   then
   begin
     // change color of row
-    DBGrid1.Canvas.Brush.Color := clGreen;
+    DBGrid1.Canvas.Brush.Color := $009DFFCE;
     DBGrid1.DefaultDrawColumnCell(Rect, DataCol, Column, State);
   end
   else if (Sender as TDBGrid).DataSource.DataSet.FieldByName('status')

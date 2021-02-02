@@ -153,11 +153,13 @@ object principal: Tprincipal
           Width = 87
           Height = 16
           Caption = 'Disconnected'
+          Color = clBtnFace
           Font.Charset = DEFAULT_CHARSET
           Font.Color = clWindowText
           Font.Height = -13
           Font.Name = 'Tahoma'
           Font.Style = [fsBold]
+          ParentColor = False
           ParentFont = False
         end
         object lbws: TLabel
