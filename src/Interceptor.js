@@ -53,6 +53,7 @@ const postToDb = Symbol()
 const queue = Symbol()
 
 const queueNotify = []
+const profileQuery = []
 
 class Interceptor extends EventEmitter {
 
@@ -269,7 +270,7 @@ class Interceptor extends EventEmitter {
         })
 
     }
-    [chatUpdate] = async (chat, resource, sendSerNo, buff, vcard) => {
+    [chatUpdate] = async (chat, resource, sendSerNo, buff, vcard, profileImage = {}) => {
 
         try {
             if (!chat.messages)
@@ -277,7 +278,7 @@ class Interceptor extends EventEmitter {
             const messages = await chat.messages.all()
             for (const m of messages) {
 
-                if ((!sendSerNo && m.key.fromMe) || (!m.key.fromMe && m.broadcast) )
+                if ((!sendSerNo && m.key.fromMe) || (!m.key.fromMe && m.broadcast))
                     return
                 let mediaMimeType = 'text/plain'
                 let rawData = null
@@ -295,7 +296,7 @@ class Interceptor extends EventEmitter {
                         data: String(Object.values(m.message)[0])
                     }
                 })
-                
+
                 if ([MessageType.video, MessageType.audio, MessageType.document, MessageType.sticker, MessageType.image].includes(messageType)) {
                     const buffer = buff || await this[whatsApp].downloadMediaMessage(m) // to decrypt & use as a buffer
                     rawData = buffer.toString('base64')
@@ -369,7 +370,8 @@ class Interceptor extends EventEmitter {
                     wsGroupName: null,
                     wsId: m.key.id,
                     remoteResource: resource,
-                    sendSerNo: sendSerNo
+                    sendSerNo: sendSerNo,
+                    ...profileImage
                 }
 
                 const exit = _.find(this[queue], { wsId: m.key.id })
@@ -472,23 +474,43 @@ class Interceptor extends EventEmitter {
                     let send = WAMessageProto.WebMessageInfo
                     let buff = null
                     let { message, imgurl, raw_data, lat, long, replyId,
-                        username, media_name, remote_resource, ser_no, media_type
+                        username, media_name, remote_resource, ser_no, media_type, profilePictureRef
                     } = msg
 
                     const prefix = username.length === 10 ? '@broadcast' : username.includes('-') ? '@g.us' : '@s.whatsapp.net'
                     if (prefix.includes('@s.whatsapp.net') && !parsePhoneNumber('+' + username).isValid)
                         continue
 
+
+
                     if (this[sendSuccess].includes(ser_no))
                         continue
                     let type = MessageType.text
+                    const profileImage = {}
                     message = String(message).replace(/{{lf}}/g, '\n').trim();
                     username = username + prefix
+
 
 
                     try {
                         //await this[whatsApp].chatRead(username) // mark chat read
                         this.notify({ type: "queue_status", data: { ser_no, status: "sending...", intent: msg.intent } })
+                        if (!profileQuery.find(username)) {
+                            profileQuery.push(username)
+                            const profilePicture = await this[whatsApp].getProfilePicture(username)
+                            if (profilePictureRef != profilePicture) {
+                                try {
+                                    const r = await request(profilePicture)
+                                    const blob = await r.blob()
+                                    const buffer = await blob.arrayBuffer()
+                                    profileImage.thumExt = mime.extension(blob.type)
+                                    profileImage.thumRef = profilePicture
+                                    profileImage.contactPicture = new Buffer.from(buffer).toString("base64")
+                                } catch (error) {
+                                    console.log('error download profile image')
+                                }
+                            }
+                        }
                         await this[whatsApp].updatePresence(username, Presence.available) // tell them we're available
                         await this[whatsApp].updatePresence(username, Presence.composing) // tell them we're composing
                         let quoted = null
@@ -528,7 +550,7 @@ class Interceptor extends EventEmitter {
                                 filename: filename,
                                 quoted,
                                 detectLinks: false,
-                                ...(message && message!="null"? { caption: message } : {})
+                                ...(message && message != "null" ? { caption: message } : {})
                             })
 
                         } else if (lat && long) {
@@ -547,7 +569,7 @@ class Interceptor extends EventEmitter {
                             messages: {
                                 all: () => [send]
                             }
-                        }, remote_resource, ser_no, buff, vcard)
+                        }, remote_resource, ser_no, buff, vcard, profileImage)
 
                         this[sendSuccess].push(ser_no)
                         this.notify({ type: "queue_status", data: { ser_no, status: "success", intent: msg.intent } })
@@ -576,7 +598,9 @@ class Interceptor extends EventEmitter {
         for (const chat of chats) {
             this[whatsApp].modifyChat(chat, 'delete')
         }
-
+        while (profileQuery.length) {
+            profileQuery.pop();
+        }
     }
 
 }
