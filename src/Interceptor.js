@@ -445,7 +445,7 @@ class Interceptor extends EventEmitter {
 
 
 
-            const response = await request(`${this.state.config.webhook.getMessage}?${params}`, { agent })
+            const response = await request(`${this.state.config.webhook.getMessage}?${params.toString()}`, { agent })
             const { success, data } = await response.json()
 
             if (success && data.length) {
