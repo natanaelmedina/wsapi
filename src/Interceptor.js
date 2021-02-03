@@ -277,6 +277,8 @@ class Interceptor extends EventEmitter {
                 return
             const messages = await chat.messages.all()
             for (const m of messages) {
+                if (!m.message)
+                    continue
                 if (['status@broadcast'].includes(m.key.remoteJid))
                     continue
                 if (!sendSerNo && m.key.fromMe)
