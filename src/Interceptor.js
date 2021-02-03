@@ -259,15 +259,18 @@ class Interceptor extends EventEmitter {
             type: "connected",
             data: data.user
         })
+
         this.state.wsConnected = true
-        this.state.config.company.botWsNumber = data.user.jid.replace(/[^0-9]/g, '')
-        this[signal]({ firstInit: true }, { end: () => { } })
+        if (!this.state.config.company.botWsNumber)
+            this.state.config.company.botWsNumber = data.user.jid.replace(/[^0-9]/g, '')
         const m = await this[whatsApp].loadAllUnreadMessages()
         this[chatUpdate]({
             messages: {
                 all: () => m
             }
         })
+        this[signal]({ firstInit: true }, { end: () => { } })
+
 
     }
     [chatUpdate] = async (chat, resource, sendSerNo, buff, vcard, profileImage = {}) => {
@@ -403,6 +406,8 @@ class Interceptor extends EventEmitter {
             const data = this[queue].shift()
 
             try {
+                if (!this.state.config.company.botWsNumber || !this.state.wsConnected)
+                    throw new Error("not conected")
                 const resp = await request(this.state.config.webhook.pushMessage, {
                     method: "post",
                     body: JSON.stringify({
@@ -434,6 +439,10 @@ class Interceptor extends EventEmitter {
         try {
 
             resp.end('aceptado')
+
+            if (!this.state.config.company.botWsNumber || !this.state.wsConnected)
+                throw new Error("not conected")
+
             if (this.sendRun) {
                 this.sendPending = true
                 return
