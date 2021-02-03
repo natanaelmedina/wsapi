@@ -277,9 +277,10 @@ class Interceptor extends EventEmitter {
                 return
             const messages = await chat.messages.all()
             for (const m of messages) {
-
-                if ((!sendSerNo && m.key.fromMe) || (!m.key.fromMe && m.broadcast))
-                    return
+                if (['status@broadcast'].includes(m.key.remoteJid))
+                    continue
+                if (!sendSerNo && m.key.fromMe)
+                    continue
                 let mediaMimeType = 'text/plain'
                 let rawData = null
                 let mediaName = null
@@ -473,15 +474,26 @@ class Interceptor extends EventEmitter {
                     msg.intent = msg.intent ? (++msg.intent) : 1
                     let send = WAMessageProto.WebMessageInfo
                     let buff = null
-                    let { message, imgurl, raw_data, lat, long, replyId,
+                    let { message, imgurl, raw_data, lat, long, replyId, comp_id, suc_id,
                         username, media_name, remote_resource, ser_no, media_type, profilePictureRef
                     } = msg
 
                     const prefix = username.length === 10 ? '@broadcast' : username.includes('-') ? '@g.us' : '@s.whatsapp.net'
-                    if (prefix.includes('@s.whatsapp.net') && !parsePhoneNumber('+' + username).isValid)
+                    if (String(username).length < 8 || (prefix.includes('@s.whatsapp.net') && !parsePhoneNumber('+' + username).isValid())) {
+                        request(`${this.state.config.webhook.pushMessage}`, {
+                            method: "PUT",
+                            body: JSON.stringify({
+                                compId: comp_id,
+                                sucId: suc_id,
+                                range: ser_no,
+                                isSendCode: 3
+                            }),
+                            agent
+                        })
+                        this.notify({ type: "queue_status", data: { ser_no, status: "error numero incorrecto", intent: msg.intent } })
+                        this.notify({ type: "count", data: `${(++count)} of ${total}` })
                         continue
-
-
+                    }
 
                     if (this[sendSuccess].includes(ser_no))
                         continue
